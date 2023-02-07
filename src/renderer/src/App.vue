@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import TraceChart from '@renderer/components/TraceChart.vue'
-import { datToTrace } from '@renderer/utils'
-import sampleTraceRaw from '@renderer/assets/traces/sample1310_lowDR-trace.dat?raw'
+import datToTrace from '@renderer/utils/datToTrace'
 
-const filePath = ref<string>('образец')
-const trace = ref(datToTrace(sampleTraceRaw))
+const filePath = ref<string>()
+const traceChart = ref()
 
 const fileName = computed(() => {
+  if (!filePath.value) {
+    return null
+  }
+
   const parts = filePath.value.split('/')
   return parts[parts.length - 1]
 })
@@ -19,8 +22,10 @@ const openFile = async (): Promise<void> => {
 
   const result = await window.electron.ipcRenderer.invoke('dialog', 'showOpenDialog', dialogConfig)
   filePath.value = result.filePaths[0]
-  const file = await window.electron.ipcRenderer.invoke('readFile', filePath.value)
-  trace.value = datToTrace(file)
+
+  const { trace, dump } = await window.electron.ipcRenderer.invoke('openSOR', filePath.value)
+  console.log(trace)
+  traceChart.value = datToTrace(dump)
 }
 </script>
 
@@ -29,10 +34,12 @@ const openFile = async (): Promise<void> => {
     <v-app-bar title="Главная" />
 
     <v-main>
-      <TraceChart :trace="trace" />
+      <TraceChart
+        :trace="traceChart"
+      />
       <div class="controls">
         <div class="controls__file">
-          <div>
+          <div v-if="fileName">
             Открыт файл <b>{{ fileName }}</b>
           </div>
           <v-btn 

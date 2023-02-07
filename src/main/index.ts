@@ -2,6 +2,7 @@ import { app, shell, BrowserWindow, dialog, ipcMain } from 'electron'
 import { join } from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import openSOR from './openSOR'
 import icon from '../../resources/icon.png?asset'
 
 function createWindow(): void {
@@ -65,6 +66,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle('readFile', (_, path: string): string => {
     return fs.readFileSync(path, { encoding: 'utf-8' })
+  })
+
+  ipcMain.handle('openSOR', (_, path: string) => {
+    return openSOR(path)
   })
 })
 
