@@ -1,19 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import TraceChart from '@renderer/components/TraceChart.vue'
-import datToTrace from '@renderer/utils/datToTrace'
+import TSor from 'src/models/sor'
 
-const filePath = ref<string>()
-const traceChart = ref()
-
-const fileName = computed(() => {
-  if (!filePath.value) {
-    return null
-  }
-
-  const parts = filePath.value.split('/')
-  return parts[parts.length - 1]
-})
+const sor = ref<TSor>()
 
 const openFile = async (): Promise<void> => {
   const dialogConfig = {
@@ -21,11 +11,10 @@ const openFile = async (): Promise<void> => {
   }
 
   const result = await window.electron.ipcRenderer.invoke('dialog', 'showOpenDialog', dialogConfig)
-  filePath.value = result.filePaths[0]
+  const filePath = result.filePaths[0]
 
-  const { trace, dump } = await window.electron.ipcRenderer.invoke('openSOR', filePath.value)
-  console.log(trace)
-  traceChart.value = datToTrace(dump)
+  sor.value = await window.electron.ipcRenderer.invoke('openSOR', filePath) as TSor
+  console.log(sor.value)
 }
 </script>
 
@@ -35,12 +24,12 @@ const openFile = async (): Promise<void> => {
 
     <v-main>
       <TraceChart
-        :trace="traceChart"
+        :sor="sor"
       />
       <div class="controls">
         <div class="controls__file">
-          <div v-if="fileName">
-            Открыт файл <b>{{ fileName }}</b>
+          <div v-if="sor?.info">
+            Открыт файл <b>{{ sor.info['filename'] }}</b>
           </div>
           <v-btn 
             class="controls__file__open"
