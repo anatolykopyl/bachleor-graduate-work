@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { watch, onMounted } from 'vue'
+import { watch, onMounted, ref } from 'vue'
 import * as d3 from 'd3'
 import type TSor from 'src/models/sor';
 import type TTrace from 'src/models/trace';
+import type TCoords from 'src/models/coords';
+import type TLineEvent from 'src/models/lineEvent';
 
 const props = defineProps<{
-  sor?: TSor;
-}>()
+  sor: TSor;
+}>();
+
+const foundEvents = ref<TLineEvent[]>([]);
 
 const padding = {
   top: 30,
@@ -26,10 +30,6 @@ const drawChart = (): void => {
     
   const g = svg.append("g")
     .attr("transform", `translate(${padding.left}, ${padding.top})`);
-
-  if (!props.sor?.trace) {
-    return
-  }
 
   const x = d3
     .scaleLinear()
@@ -80,7 +80,7 @@ const drawChart = (): void => {
   })
 
   g.selectAll(".included")
-    .data(includedEvents as { x: number; y: number }[])
+    .data(includedEvents as TTrace)
     .enter()
     .append("circle")
     .attr("class", "included")
@@ -88,35 +88,71 @@ const drawChart = (): void => {
     .attr("cx", (d) => x(d.x))
     .attr("cy", (d) => y(d.y))
 
-  const deviantEvents: { x: number; y: number }[] = []
-  props.sor.trace.forEach((dp, i) => {
-    if (i > 0) return
-
-    const prevPoint = (props.sor as TSor).trace[i-1]
-    const avgLoss = 0
-
-    if (Math.abs(dp.y - prevPoint.y) > avgLoss) {
-      deviantEvents.push({ x: dp.x, y: dp.y })
-    }
-  })
-  console.log(deviantEvents)
-
-  g.selectAll(".deviant")
-    .data(deviantEvents as { x: number; y: number }[])
+  // Draw naively found events
+  g.selectAll(".found")
+    .data(foundEvents.value)
     .enter()
     .append("circle")
-    .attr("class", "deviant")
+    .attr("class", "found")
+    .attr("fill", (d) => d.type === 'loss' ? "red" : "blue")
     .attr("r", 2)
-    .attr("fill", "red")
-    .attr("cx", (d) => x(d.x))
-    .attr("cy", (d) => y(d.y))
+    .attr("cx", (d) => x(d.start.x))
+    .attr("cy", (d) => y(d.start.y))
 }
 
 watch(
-  () => props.sor?.trace,
+  () => props.sor.trace,
   () => {
     drawChart()
   }
+)
+
+// WTF, computed wasn't reacting to nested changes
+watch(
+  () => props.sor,
+  () => {
+    foundEvents.value = ((): TLineEvent[] => {
+      const clumps: TLineEvent[] = []
+      let currentClump: {
+        start: TCoords,
+        end?: TCoords,
+        type: "reflection" | "loss",
+      } | null = null
+
+      props.sor.trace.forEach((dp, i) => {
+        if (i === 0) {
+          return
+        }
+
+        if (!currentClump) {
+          if (dp.y - props.sor.trace[i - 1].y > -props.sor.info.FxdParams.reflThr) {
+            currentClump = { 
+              start: props.sor.trace[i - 1],
+              type: "reflection"
+            }
+          }
+
+          if (dp.y - props.sor.trace[i - 1].y < -props.sor.info.FxdParams.lossThr) {
+            currentClump = {
+              start: dp,
+              type: "loss"
+            }
+          }
+        } else {
+          if (dp.y <= currentClump.start.y) {
+            currentClump.end = dp
+            clumps.push(currentClump as TLineEvent)
+            currentClump = null
+          }
+        }
+      })
+
+      return clumps
+    })()
+
+    drawChart()
+  },
+  { deep: true, immediate: true }
 )
 
 onMounted(() => {
@@ -127,3 +163,9 @@ onMounted(() => {
 <template>
   <svg id="trace"></svg>
 </template>
+
+<style scoped>
+#trace {
+  height: 500px;
+}
+</style>

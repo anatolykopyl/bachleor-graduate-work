@@ -1,6 +1,5 @@
-type TTrace = {
-  x: number;
-  y: number;
-}[]
+import type TCoords from "./coords"
+
+type TTrace = TCoords[]
 
 export default TTrace

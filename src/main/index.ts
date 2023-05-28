@@ -4,6 +4,9 @@ import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import openSOR from './openSOR'
 import icon from '../../resources/icon.png?asset'
+import ElStore from 'electron-store';
+
+const elStore = new ElStore();
 
 function createWindow(): void {
   // Create the browser window.
@@ -71,6 +74,13 @@ app.whenReady().then(() => {
   ipcMain.handle('openSOR', (_, path: string) => {
     return openSOR(path)
   })
+
+  ipcMain.on('electron-store-get', async (event, val) => {
+    event.returnValue = elStore.get(val);
+  });
+  ipcMain.on('electron-store-set', async (event, key, val) => {
+    elStore.set(key, val);
+  });
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

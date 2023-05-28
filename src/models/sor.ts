@@ -9,6 +9,16 @@ type TSor = {
   status: string;
   infoRaw: object;
   info: {
+    filename: string;
+    FxdParams: {
+      BC: number,
+      date: Date,
+      EOTThr: number,
+      lossThr: number,
+      reflThr: number,
+      pulseWidth: number,
+      wavelength: string,
+    },
     Cksum: {
       checksum: number,
       checksum_ours: number,

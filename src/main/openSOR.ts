@@ -13,27 +13,42 @@ const datToTrace = (rows: Array<string>): TTrace => {
   })
 }
 
+// eslint-disable-next-line
+const parseInfo = (raw: any) => {
+  return {
+    filename: raw.filename,
+    Cksum: raw.Cksum,
+    KeyEvents: Object.keys(raw.KeyEvents)
+      .filter((key) => key !== 'Summary' && key !== 'num events')
+      .map((key) => {
+        const event = raw.KeyEvents[key]
+
+        return {
+          ...event,
+          distance: parseFloat(event.distance)
+        }
+      }),
+    FxdParams: {
+      BC: parseFloat(raw.FxdParams["BC"]),
+      EOTThr: parseFloat(raw.FxdParams["EOT thr"]),
+      date: new Date(raw.FxdParams["date/time"]),
+      lossThr: parseFloat(raw.FxdParams["loss thr"]),
+      reflThr: parseFloat(raw.FxdParams["refl thr"]),
+      pulseWidth: parseFloat(raw.FxdParams["pulse width"]),
+      wavelength: raw.FxdParams["wavelength"]
+    },
+    Summary: raw.KeyEvents.Summary,
+    DataPts: raw.DataPts,
+  }
+}
+
 export default async (filepath: string): Promise<TSor> => {
   const sor = new SOR()
   const results = await sor.reader(filepath)
 
   return {
     status: results[0],
-    info: {
-      Cksum: results[1].Cksum,
-      KeyEvents: Object.keys(results[1].KeyEvents)
-        .filter((key) => key !== 'Summary' && key !== 'num events')
-        .map((key) => {
-          const event = results[1].KeyEvents[key]
-
-          return {
-            ...event,
-            distance: parseFloat(event.distance)
-          }
-        }),
-      Summary: results[1].KeyEvents.Summary,
-      DataPts: results[1].DataPts
-    },
+    info: parseInfo(results[1]),
     infoRaw: results[1],
     trace: datToTrace(results[2]),
   }
