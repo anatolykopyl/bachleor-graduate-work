@@ -6,7 +6,11 @@ import openSOR from './openSOR'
 import icon from '../../resources/icon.png?asset'
 import ElStore from 'electron-store';
 
-const elStore = new ElStore();
+const elStore = new ElStore({
+  defaults: {
+    library: []
+  }
+});
 
 function createWindow(): void {
   // Create the browser window.
@@ -78,6 +82,7 @@ app.whenReady().then(() => {
   ipcMain.on('electron-store-get', async (event, val) => {
     event.returnValue = elStore.get(val);
   });
+  
   ipcMain.on('electron-store-set', async (event, key, val) => {
     elStore.set(key, val);
   });

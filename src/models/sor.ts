@@ -17,7 +17,7 @@ type TSor = {
       lossThr: number,
       reflThr: number,
       pulseWidth: number,
-      wavelength: string,
+      wavelength: string
     },
     Cksum: {
       checksum: number,
