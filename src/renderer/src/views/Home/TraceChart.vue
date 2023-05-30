@@ -8,9 +8,14 @@ import type TLineEvent from 'src/models/lineEvent';
 
 const props = defineProps<{
   sor: TSor;
+  teoThr: number;
+  showBuiltin: boolean;
+  showNaive: boolean;
+  showTeo: boolean;
 }>();
 
 const foundEvents = ref<TLineEvent[]>([]);
+const teoEvents = ref<TLineEvent[]>([]);
 
 const padding = {
   top: 30,
@@ -70,46 +75,64 @@ const drawChart = (): void => {
     .attr("d", line);
 
   // Draw included in file events
-  const includedEvents: { x: number; y: number | null }[] = props.sor.info.KeyEvents.map((e) => ({ x: e.distance, y: null }))
-  props.sor.trace.forEach((dp) => {
-    includedEvents.forEach((event) => {
-      if (event.x >= dp.x) {
-        event.y = dp.y
-      }
+  if (props.showBuiltin) {
+    const includedEvents: { x: number; y: number | null }[] = props.sor.info.KeyEvents.map((e) => ({ x: e.distance, y: null }))
+    props.sor.trace.forEach((dp) => {
+      includedEvents.forEach((event) => {
+        if (event.x >= dp.x) {
+          event.y = dp.y
+        }
+      })
     })
-  })
-
-  g.selectAll(".included")
-    .data(includedEvents as TTrace)
-    .enter()
-    .append("circle")
-    .attr("class", "included")
-    .attr("r", 2)
-    .attr("cx", (d) => x(d.x))
-    .attr("cy", (d) => y(d.y))
+  
+    g.selectAll(".included")
+      .data(includedEvents as TTrace)
+      .enter()
+      .append("circle")
+      .attr("class", "included")
+      .attr("r", 2)
+      .attr("cx", (d) => x(d.x))
+      .attr("cy", (d) => y(d.y))
+  }
 
   // Draw naively found events
-  g.selectAll(".found")
-    .data(foundEvents.value)
-    .enter()
-    .append("circle")
-    .attr("class", "found")
-    .attr("fill", (d) => d.type === 'loss' ? "red" : "blue")
-    .attr("r", 2)
-    .attr("cx", (d) => x(d.start.x))
-    .attr("cy", (d) => y(d.start.y))
+  if (props.showNaive) {
+    g.selectAll(".found")
+      .data(foundEvents.value)
+      .enter()
+      .append("circle")
+      .attr("class", "found")
+      .attr("fill", (d) => d.type === 'loss' ? "red" : "blue")
+      .attr("r", 2)
+      .attr("cx", (d) => x(d.start.x))
+      .attr("cy", (d) => y(d.start.y))
+  }
+
+  // Draw teo found events
+  if (props.showTeo) {
+    g.selectAll(".teo")
+      .data(teoEvents.value)
+      .enter()
+      .append("circle")
+      .attr("class", "teo")
+      .attr("fill", "green")
+      .attr("r", 2)
+      .attr("cx", (d) => x(d.start.x))
+      .attr("cy", (d) => y(d.start.y))
+  }
 }
 
 watch(
-  () => props.sor.trace,
+  props,
   () => {
     drawChart()
-  }
+  },
+  { deep: true }
 )
 
 // WTF, computed wasn't reacting to nested changes
 watch(
-  () => props.sor,
+  () => props,
   () => {
     foundEvents.value = ((): TLineEvent[] => {
       const clumps: TLineEvent[] = []
@@ -148,6 +171,38 @@ watch(
       })
 
       return clumps
+    })()
+
+    teoEvents.value = ((): TLineEvent[]  => {
+      const teo: (TCoords &  { tX: number, tY: number })[] = []
+      props.sor.trace.forEach((dp, i) => {
+        if (i === 0 || i === props.sor.trace.length - 1) {
+          return
+        }
+
+        const prev = props.sor.trace[i - 1]
+        const next = props.sor.trace[i + 1]
+
+        teo.push({
+          tX: dp.x,
+          tY: dp.y * dp.y - (prev.y * next.y),
+          x: dp.x,
+          y: dp.y,
+        })
+      })
+
+      const result: TLineEvent[] = []
+      teo.forEach((dp) => {
+        if (dp.tY > props.teoThr) {
+          result.push({
+            start: dp,
+            end: dp,
+            type: "loss"
+          })
+        }
+      })
+
+      return result
     })()
 
     drawChart()

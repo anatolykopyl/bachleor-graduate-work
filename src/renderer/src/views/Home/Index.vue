@@ -9,6 +9,11 @@ const store = useStore()
 const sor = ref<TSor | null>(null)
 const lossThr = ref<string>()
 const reflThr = ref<string>()
+const teoThr = ref<string>("0.2")
+
+const showBuiltin = ref<boolean>(true)
+const showNaive = ref<boolean>(false)
+const showTeo = ref<boolean>(true)
 
 const justSavedToLib = ref<boolean>(false)
 
@@ -82,12 +87,17 @@ const updateRefl = (value: string): void => {
     <TraceChart
       v-if="sor"
       :sor="sor"
+      :teo-thr="parseFloat(teoThr)"
+      :show-builtin="showBuiltin"
+      :show-naive="showNaive"
+      :show-teo="showTeo"
     />
     
     <div class="controls">
       <div class="controls__file">
         <div v-if="sor?.info">
-          Открыт файл <b>{{ sor.info.filename }}</b>
+          Открыт файл 
+          <b class="controls__file__filename">{{ sor.info.filename }}</b>
         </div>
         <v-btn 
           class="controls__file__open"
@@ -114,16 +124,37 @@ const updateRefl = (value: string): void => {
         v-if="sor"
         class="controls__settings"
       >
-        <v-text-field
-          v-model="reflThr"
-          label="Лимит отражения (дБ)"
-          @update:model-value="updateRefl"
-        />
-        <v-text-field
-          v-model="lossThr"
-          label="Лимит неотражения (дБ)"
-          @update:model-value="updateLoss"
-        />
+        <div class="controls__settings__naive">
+          <v-text-field
+            v-model="reflThr"
+            label="Лимит отражения (дБ)"
+            @update:model-value="updateRefl"
+          />
+          <v-text-field
+            v-model="lossThr"
+            label="Лимит неотражения (дБ)"
+            @update:model-value="updateLoss"
+          />
+        </div>
+        <div class="controls__settings__teo">
+          <v-text-field
+            v-model="teoThr"
+            label="Лимит Тигера (дБ)"
+          />
+
+          <v-checkbox
+            v-model="showBuiltin"
+            label="Встроенные (черный)"
+          ></v-checkbox>
+          <v-checkbox
+            v-model="showNaive"
+            label="Простые (красный & синий)"
+          ></v-checkbox>
+          <v-checkbox
+            v-model="showTeo"
+            label="TEO (зеленый)"
+          ></v-checkbox>
+        </div>
       </div>
     </div>
   </v-main>
@@ -139,14 +170,29 @@ const updateRefl = (value: string): void => {
 .controls__file,
 .controls__settings {
   display: flex;
-  flex-direction: column;
 }
 
 .controls__file {
   gap: 10px;
+  width: 300px;
+  flex-direction: column;
+}
+
+.controls__file__filename {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .controls__settings {
+  flex-direction: row;
   flex-grow: 1;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  > * {
+    flex-grow: 1;
+    box-sizing: border-box;
+  }
 }
 </style>
