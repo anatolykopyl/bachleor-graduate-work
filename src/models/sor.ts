@@ -1,13 +1,13 @@
-import type TTrace from "./trace"
+import type TTrace from "./trace";
 
 type TEvent = {
   type: string;
   distance: number;
-}
+};
 
 type TSor = {
   status: string;
-  infoRaw: object;
+  infoRaw: unknown;
   info: {
     filename: string;
     FxdParams: {
@@ -17,7 +17,8 @@ type TSor = {
       lossThr: number,
       reflThr: number,
       pulseWidth: number,
-      wavelength: string
+      wavelength: string,
+      resolution: number
     },
     Cksum: {
       checksum: number,
@@ -29,6 +30,6 @@ type TSor = {
     Summary: object,
   };
   trace: TTrace;
-}
+};
 
-export default TSor
+export default TSor;

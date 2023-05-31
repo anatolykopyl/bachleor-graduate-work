@@ -1,76 +1,153 @@
 <script setup lang="ts">
-import { ref, computed, toRaw } from 'vue'
-import TraceChart from './TraceChart.vue'
-import TSor from '../../../../models/sor'
-import { useStore } from '@renderer/store'
+import { ref, computed, toRaw } from "vue";
+import TraceChart from "./TraceChart.vue";
+import GenerateModal from "./GenerateModal.vue";
+import ActionsModal from "./ActionsModal.vue";
+import TSor from "../../../../models/sor";
+import { useStore } from "@renderer/store";
 
-const store = useStore()
+const store = useStore();
 
-const sor = ref<TSor | null>(null)
-const lossThr = ref<string>()
-const reflThr = ref<string>()
-const teoThr = ref<string>("0.2")
+const sor = ref<TSor | null>(null);
+const lossThr = ref<string>();
+const reflThr = ref<string>();
+const teoThr = ref<string>("0.2");
 
-const showBuiltin = ref<boolean>(true)
-const showNaive = ref<boolean>(false)
-const showTeo = ref<boolean>(true)
+const showBuiltin = ref<boolean>(true);
+const showNaive = ref<boolean>(false);
+const showTeo = ref<boolean>(true);
+const showTeoVal = ref<boolean>(false);
 
-const justSavedToLib = ref<boolean>(false)
+const sorEdited = ref(false);
+const justSavedToLib = ref<boolean>(false);
+const showActionsModal = ref();
+const clickX = ref<number>();
 
 const openFile = async (): Promise<void> => {
   const dialogConfig = {
-    properties: ['openFile']
-  }
+    properties: ["openFile"],
+  };
 
-  const result = await window.electron.ipcRenderer.invoke('dialog', 'showOpenDialog', dialogConfig)
-  const filePath = result.filePaths[0]
+  const result = await window.electron.ipcRenderer.invoke("dialog", "showOpenDialog", dialogConfig);
+  const filePath = result.filePaths[0];
 
-  sor.value = await window.electron.ipcRenderer.invoke('openSOR', filePath) as TSor
-  lossThr.value = String(sor.value.info.FxdParams.lossThr)
-  reflThr.value = String(sor.value.info.FxdParams.reflThr)
-  justSavedToLib.value = false
+  sor.value = await window.electron.ipcRenderer.invoke("openSOR", filePath) as TSor;
+  lossThr.value = String(sor.value.info.FxdParams.lossThr);
+  reflThr.value = String(sor.value.info.FxdParams.reflThr);
+  justSavedToLib.value = false;
+  sorEdited.value = false;
 
-  console.log(sor.value)
-}
+  console.log(sor.value);
+};
 
 const inLibrary = computed((): boolean => {
   if (!sor.value) {
-    return false
+    return false;
   }
 
   if (justSavedToLib.value) {
-    return true
+    return true;
   }
 
-  const library = window.electron.store.get('library')
-  return library.some((s) => s.info.filename === sor.value?.info.filename)
-})
+  const library = window.electron.store.get("library");
+  return library.some((s) => s.info.filename === sor.value?.info.filename);
+});
 
 const saveToLibrary = (): void => {
   if (!sor.value) {
-    return
+    return;
   }
 
-  justSavedToLib.value = true
-  const library = window.electron.store.get('library')
-  library.push(toRaw(sor.value))
-  window.electron.store.set('library', library)
-}
+  justSavedToLib.value = true;
+  const library = window.electron.store.get("library");
+  library.push(toRaw(sor.value));
+  window.electron.store.set("library", library);
+};
 
 const updateLoss = (value: string): void => {
   if (!sor.value) {
-    return
+    return;
   }
 
-  sor.value.info.FxdParams.lossThr = parseFloat(value)
-}
+  sor.value.info.FxdParams.lossThr = parseFloat(value);
+};
 
 const updateRefl = (value: string): void => {
   if (!sor.value) {
-    return
+    return;
   }
 
-  sor.value.info.FxdParams.reflThr = parseFloat(value)
+  sor.value.info.FxdParams.reflThr = parseFloat(value);
+};
+
+function crop(x: number): void {
+  if (!sor.value) {
+    return;
+  }
+
+  sor.value.trace = sor.value.trace.filter((dp) => dp.x < x);
+  sorEdited.value = true;
+}
+
+function generate({
+  att, noiseScale,
+}: { att: number, noiseScale: number }): void {
+  if (!sor.value) {
+    return;
+  }
+
+  while(sor.value.trace.length < sor.value.info.DataPts["num data points"]) {
+    const lastDP = sor.value.trace[sor.value.trace.length - 1];
+
+    const step = sor.value.info.FxdParams.resolution * 0.001;
+
+    const stepAtt = att * step;
+    const noise = noiseScale * (Math.random() - .5) * stepAtt;
+
+    // Potentially causing excessive rerenderings
+    sor.value.trace.push({
+      x: lastDP.x + step,
+      y: lastDP.y - stepAtt + noise,
+    });
+  }
+}
+
+function addEvent({
+  x,
+  type,
+  loss,
+  reflection,
+}: {
+  x: number,
+  type: "reflection" | "loss",
+  loss: number,
+  reflection: number
+}): void {
+  if (!sor.value) {
+    return;
+  }
+
+  const length = 8;
+
+  const eventStart = sor.value.trace.findIndex((dp) => dp.x > x);
+  const eventEnd = eventStart + length;
+
+  for (let i = eventStart; i < eventEnd; i++) {
+    if (type === "loss") {
+      sor.value.trace[i].y = sor.value.trace[i].y - loss;
+    } else {
+      sor.value.trace[i].y = sor.value.trace[i].y + reflection;
+    }
+  }
+
+  for (let i = eventEnd; i <= sor.value.trace.length; i++) {
+    sor.value.trace[i].y = sor.value.trace[i].y - loss;
+  }
+}
+
+function handleClickTrace(x: number): void {
+  showActionsModal.value = true;
+  clickX.value = x;
 }
 </script>
 
@@ -91,21 +168,27 @@ const updateRefl = (value: string): void => {
       :show-builtin="showBuiltin"
       :show-naive="showNaive"
       :show-teo="showTeo"
+      :show-teo-val="showTeoVal"
+      :sor-edited="sorEdited"
+      @click-trace="handleClickTrace"
     />
-    
-    <div class="controls">
+
+    <div
+      v-if="sor"
+      class="controls"
+    >
       <div class="controls__file">
         <div v-if="sor?.info">
-          Открыт файл 
+          Открыт файл
           <b class="controls__file__filename">{{ sor.info.filename }}</b>
         </div>
-        <v-btn 
+        <v-btn
           class="controls__file__open"
           @click="openFile"
         >
           Открыть файл
         </v-btn>
-        <v-btn 
+        <v-btn
           v-if="!inLibrary"
           class="controls__file__save"
           @click="saveToLibrary"
@@ -119,8 +202,18 @@ const updateRefl = (value: string): void => {
         >
           Файл в библиотеке
         </v-btn>
+
+        <GenerateModal
+          @generate="generate"
+        />
+        <ActionsModal
+          v-model="showActionsModal"
+          :click-x="(clickX as number)"
+          @add-event="addEvent"
+          @crop="crop"
+        />
       </div>
-      <div 
+      <div
         v-if="sor"
         class="controls__settings"
       >
@@ -135,32 +228,82 @@ const updateRefl = (value: string): void => {
             label="Лимит неотражения (дБ)"
             @update:model-value="updateLoss"
           />
-        </div>
-        <div class="controls__settings__teo">
           <v-text-field
             v-model="teoThr"
             label="Лимит Тигера (дБ)"
           />
-
+        </div>
+        <div class="controls__settings__teo">
           <v-checkbox
             v-model="showBuiltin"
-            label="Встроенные (черный)"
-          ></v-checkbox>
+            :disabled="sorEdited"
+          >
+            <template #label>
+              Встроенные события
+              <div
+                class="colorIndicator"
+                style="background: black;"
+              ></div>
+            </template>
+          </v-checkbox>
           <v-checkbox
             v-model="showNaive"
-            label="Простые (красный & синий)"
-          ></v-checkbox>
+          >
+            <template #label>
+              События найденные простым методом
+              <div
+                class="colorIndicator"
+                style="background: blue;"
+              ></div>
+              <div
+                class="colorIndicator"
+                style="background: red;"
+              ></div>
+            </template>
+          </v-checkbox>
           <v-checkbox
             v-model="showTeo"
-            label="TEO (зеленый)"
-          ></v-checkbox>
+          >
+            <template #label>
+              События найденные с помощью TEO
+              <div
+                class="colorIndicator"
+                style="background: green;"
+              ></div>
+            </template>
+          </v-checkbox>
+          <v-checkbox
+            v-model="showTeoVal"
+          >
+            <template #label>
+              График TEO
+              <div
+                class="colorIndicator"
+                style="background: pink;"
+              ></div>
+            </template>
+          </v-checkbox>
         </div>
       </div>
     </div>
+    <v-btn
+      v-else
+      class="openFile"
+      color="primary"
+      @click="openFile"
+    >
+      Открыть файл
+    </v-btn>
   </v-main>
 </template>
 
 <style scoped lang="scss">
+.openFile {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .controls {
   padding: 30px;
   display: flex;
@@ -193,6 +336,15 @@ const updateRefl = (value: string): void => {
   > * {
     flex-grow: 1;
     box-sizing: border-box;
+    width: calc(50% - 10px);
   }
+}
+
+.colorIndicator {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  border: 1px solid black;
+  margin-left: 8px;
 }
 </style>

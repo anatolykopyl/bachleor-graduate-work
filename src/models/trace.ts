@@ -1,5 +1,5 @@
-import type TCoords from "./coords"
+import type TCoords from "./coords";
 
-type TTrace = TCoords[]
+type TTrace = TCoords[];
 
-export default TTrace
+export default TTrace;

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useStore } from '@renderer/store'
+import { useStore } from "@renderer/store";
 
-const store = useStore()
+const store = useStore();
 
-const library = window.electron.store.get('library')
+const library = window.electron.store.get("library");
 
 function open(sor): void {
-  store.sor = sor
-  store.view = "home"
+  store.sor = sor;
+  store.view = "home";
 }
 </script>
 
