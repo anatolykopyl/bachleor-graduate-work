@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { useStore } from "@renderer/store";
+import type TSor from "src/models/sor";
 
 const store = useStore();
 
 const library = window.electron.store.get("library");
 
-function open(sor): void {
+function open(sor: TSor): void {
   store.sor = sor;
   store.view = "home";
+}
+
+function deleteFromLib(sor: TSor): void {
+  const library = window.electron.store.get("library");
+  window.electron.store.set("library", library.filter((s) => s.info.filename !== sor.info.filename));
 }
 </script>
 
@@ -45,6 +51,14 @@ function open(sor): void {
               </div>
               <div>{{ sor.infoRaw.GenParams["comments"] }}</div>
             </template>
+            <template #append>
+              <v-icon
+                class="library__item__close"
+                @click="deleteFromLib(sor)"
+              >
+                mdi-close
+              </v-icon>
+            </template>
           </v-list-item>
         </v-hover>
 
@@ -65,5 +79,9 @@ function open(sor): void {
 .library__item__lineInfo {
   display: flex;
   gap: 8px;
+}
+
+.library__item__close {
+  z-index: 20;
 }
 </style>

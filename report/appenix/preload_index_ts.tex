@@ -1,0 +1,31 @@
+\subsection{Модуль <<preload/index.ts>>}
+\begin{lstlisting}[language=typescript]
+import { contextBridge, ipcRenderer } from "electron";
+import { electronAPI } from "@electron-toolkit/preload";
+
+const api = {};
+
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld("electron", {
+      ...electronAPI,
+      store: {
+        get(key) {
+          return ipcRenderer.sendSync("electron-store-get", key);
+        },
+        set(property, val) {
+          ipcRenderer.send("electron-store-set", property, val);
+        },
+      },
+    });
+    contextBridge.exposeInMainWorld("api", api);
+  } catch (error) {
+    console.error(error);
+  }
+} else {
+  // @ts-ignore (define in dts)
+  window.electron = electronAPI;
+  // @ts-ignore (define in dts)
+  window.api = api;
+}
+\end{lstlisting}

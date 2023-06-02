@@ -37,6 +37,10 @@ const parseInfo = (raw: any) => {
       wavelength: raw.FxdParams["wavelength"],
       resolution: raw.FxdParams["resolution"],
     },
+    GenParams: {
+      cableId: raw.GenParams["cable ID"],
+      fiberId: raw.GenParams["fiber ID"],
+    },
     Summary: raw.KeyEvents.Summary,
     DataPts: raw.DataPts,
   };

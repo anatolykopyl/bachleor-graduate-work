@@ -1,12 +1,16 @@
+import type TSor from "src/models/sor";
 import { defineStore } from "pinia";
 
 export const useStore = defineStore("store", {
-  state: () => ({
+  state: (): {
+    view: "home" | "library",
+    sor: TSor | null,
+  } => ({
     view: "home",
     sor: null,
   }),
   actions: {
-    navigate(view: string) {
+    navigate(view: "home" | "library") {
       this.view = view;
     },
   },

@@ -1,0 +1,12 @@
+\subsection{Модуль <<models/lineEvent.ts>>}
+\begin{lstlisting}[language=typescript]
+import TCoords from "./coords";
+
+type TLineEvent = {
+  start: TCoords,
+  end: TCoords,
+  type: "reflection" | "loss",
+};
+
+export default TLineEvent;
+\end{lstlisting}

@@ -4,5 +4,15 @@ out
 *.log*
 .DS_Store
 
-report
-
+_minted-index
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fls
+*.fdb_latexmk
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.xdv

@@ -1,0 +1,85 @@
+\subsection{Модуль <<main/index.ts>>}
+\begin{lstlisting}[language=typescript]
+import { app, shell, BrowserWindow, dialog, ipcMain } from "electron";
+import { join } from "path";
+import fs from "fs";
+import { electronApp, optimizer, is } from "@electron-toolkit/utils";
+import openSOR from "./openSOR";
+import icon from "../../resources/icon.png?asset";
+import ElStore from "electron-store";
+
+const elStore = new ElStore({
+  defaults: {
+    library: [],
+  },
+});
+
+function createWindow(): void {
+  const mainWindow = new BrowserWindow({
+    width: 1000,
+    height: 1000,
+    show: false,
+    autoHideMenuBar: true,
+    ...(process.platform === "linux" ? { icon } : {}),
+    webPreferences: {
+      preload: join(__dirname, "../preload/index.js"),
+      sandbox: false,
+    },
+  });
+
+  mainWindow.on("ready-to-show", () => {
+    mainWindow.show();
+  });
+
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url);
+    return { action: "deny" };
+  });
+
+  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+  } else {
+    mainWindow.loadFile(join(__dirname, "../renderer/index.html"));
+  }
+}
+
+app.whenReady().then(() => {
+  electronApp.setAppUserModelId("com.electron");
+
+  app.on("browser-window-created", (_, window) => {
+    optimizer.watchWindowShortcuts(window);
+  });
+
+  createWindow();
+
+  app.on("activate", function () {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+
+  ipcMain.handle("dialog", (_, method, params) => {
+    return dialog[method](BrowserWindow.getAllWindows()[0], params);
+  });
+
+  ipcMain.handle("readFile", (_, path: string): string => {
+    return fs.readFileSync(path, { encoding: "utf-8" });
+  });
+
+  ipcMain.handle("openSOR", (_, path: string) => {
+    return openSOR(path);
+  });
+
+  ipcMain.on("electron-store-get", async (event, val) => {
+    event.returnValue = elStore.get(val);
+  });
+
+  ipcMain.on("electron-store-set", async (event, key, val) => {
+    elStore.set(key, val);
+  });
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+\end{lstlisting}

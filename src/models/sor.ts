@@ -20,6 +20,10 @@ type TSor = {
       wavelength: string,
       resolution: number
     },
+    GenParams: {
+      cableId: string;
+      fiberId: string;
+    },
     Cksum: {
       checksum: number,
       checksum_ours: number,

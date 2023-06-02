@@ -1,0 +1,64 @@
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+
+\lstdefinelanguage{typescript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, const, let, if, in, while, do, else, case, break, type},
+  keywordstyle=\color{blue},
+  ndkeywords={class, export, boolean, string, number, throw, implements, import, from, this},
+  ndkeywordstyle=\color{magenta},
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codegreen},
+  stringstyle=\color{codepurple},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinelanguage{vue}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, const, let, if, in, while, do, else, case, break, type, v-if, v-else, v-for, style, script, v-slot},
+  keywordstyle=\color{blue},
+  ndkeywords={class, export, boolean, string, number, throw, implements, import, from, this, template, div, svg, v-app-bar, v-btn, v-main, v-text-field, v-checkbox, v-card, v-card-actions, v-dialog, v-switch, v-icon, v-list, v-hover, v-list-item, span, v-divider, v-app, component},
+  ndkeywordstyle=\color{magenta},
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codegreen},
+  stringstyle=\color{codepurple},
+  morestring=[b]',
+  morestring=[b]",
+  alsoletter=-,
+}
+
+\lstdefinelanguage{scss}{
+  keywords={@import, body},
+  keywordstyle=\color{codegreen},
+  identifierstyle=\color{black},
+  stringstyle=\color{codepurple},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinestyle{mystyle}{
+  basicstyle=\linespread{0.8}\listingsfont,
+  numberstyle=\linespread{0.8}\listingsfont\color{codegray},
+  breakatwhitespace=false,
+  breaklines=true,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=10pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=2,
+  escapeinside={\%*}{*)},
+}
+
+\lstset{style=mystyle}

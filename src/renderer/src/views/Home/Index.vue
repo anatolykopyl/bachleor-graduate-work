@@ -3,12 +3,13 @@ import { ref, computed, toRaw } from "vue";
 import TraceChart from "./TraceChart.vue";
 import GenerateModal from "./GenerateModal.vue";
 import ActionsModal from "./ActionsModal.vue";
-import TSor from "../../../../models/sor";
+import type TSor from "src/models/sor";
 import { useStore } from "@renderer/store";
+import { storeToRefs } from "pinia";
 
 const store = useStore();
+const { sor } = storeToRefs(store);
 
-const sor = ref<TSor | null>(null);
 const lossThr = ref<string>();
 const reflThr = ref<string>();
 const teoThr = ref<string>("0.2");
@@ -178,9 +179,21 @@ function handleClickTrace(x: number): void {
       class="controls"
     >
       <div class="controls__file">
-        <div v-if="sor?.info">
+        <div>
           Открыт файл
           <b class="controls__file__filename">{{ sor.info.filename }}</b>
+        </div>
+        <div>
+          {{ sor.info.FxdParams.wavelength }}
+        </div>
+        <div>
+          {{ new Intl.DateTimeFormat('ru-RU').format(new Date(sor.info.FxdParams.date)) }}
+        </div>
+        <div>
+          ID кабеля {{ sor.info.GenParams.cableId }}
+        </div>
+        <div>
+          ID волокна {{ sor.info.GenParams.fiberId }}
         </div>
         <v-btn
           class="controls__file__open"
