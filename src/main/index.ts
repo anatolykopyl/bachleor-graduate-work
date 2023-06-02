@@ -83,7 +83,7 @@ app.whenReady().then(() => {
     event.returnValue = elStore.get(val);
   });
 
-  ipcMain.on("electron-store-set", async (event, key, val) => {
+  ipcMain.on("electron-store-set", async (_, key, val) => {
     elStore.set(key, val);
   });
 });

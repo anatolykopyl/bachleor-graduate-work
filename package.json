@@ -1,11 +1,11 @@
 {
   "name": "bachleor-graduate-work",
+  "description": "A program for viewing and editing OTDR records",
   "version": "1.0.0",
   "main": "./out/main/index.js",
   "author": "Anatoly Kopyl <hi@kopyl.dev>",
   "license": "GPL-3.0+",
   "scripts": {
-    "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
