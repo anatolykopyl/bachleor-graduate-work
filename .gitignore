@@ -16,3 +16,5 @@ _minted-index
 *.synctex.gz
 *.toc
 *.xdv
+
+report/presentationText/
